@@ -1,0 +1,17 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+venv/
+.venv/
+
+# Runtime data / logs (local trading state, not source)
+data/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

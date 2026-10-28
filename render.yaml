@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: niftypulse
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      # Paper broker only: no real orders can be placed from the public site.
+      - key: BROKER
+        value: paper
+      - key: ENABLE_LIVE_TRADING
+        value: "0"
+      - key: AUTO_TRADE
+        value: "1"
+      - key: DEMO_MODE
+        value: "0"
