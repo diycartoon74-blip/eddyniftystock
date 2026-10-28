@@ -617,6 +617,48 @@
     <article class="panel micro" id="pnlCard"></article>
   </section>
 
+  <section class="workspace">
+    <section class="panel chart-panel">
+      <div class="panel-head chart-head">
+        <div class="tabs" id="tabs">
+          <button class="tab on" data-sym="NIFTY">NIFTY 50</button>
+          <button class="tab" data-sym="BANKNIFTY">BANK NIFTY</button>
+          <button class="tab" data-sym="SENSEX">SENSEX</button>
+        </div>
+        <div class="legend">
+          <span><i class="sw ema20"></i>EMA 20</span>
+          <span><i class="sw ema50"></i>EMA 50</span>
+          <span id="vwapLegend"><i class="sw vwap"></i>VWAP</span>
+        </div>
+        <div class="chart-quote"><b id="chartSpot">--</b><span id="chartChg" class="muted">--</span></div>
+        <span class="live-tag" id="liveTag" title="Last index print feeding the forming candle; broker and Yahoo prices can be delayed">
+          <i></i><b id="liveLabel">FEED IDLE</b><span id="liveTime">--</span>
+        </span>
+      </div>
+      <div class="tf-bar" role="group" aria-label="Chart timeframe">
+        <button class="tf" data-tf="1m" aria-pressed="false">1m</button>
+        <button class="tf" data-tf="2m" aria-pressed="false">2m</button>
+        <button class="tf" data-tf="3m" aria-pressed="false">3m</button>
+        <button class="tf on" data-tf="5m" aria-pressed="true">5m</button>
+        <button class="tf" data-tf="10m" aria-pressed="false">10m</button>
+        <button class="tf" data-tf="15m" aria-pressed="false">15m</button>
+        <button class="tf" data-tf="30m" aria-pressed="false">30m</button>
+        <button class="tf" data-tf="1h" aria-pressed="false">1H</button>
+        <button class="tf" data-tf="1d" aria-pressed="false">1D</button>
+        <button class="tf" data-tf="1w" aria-pressed="false">1W</button>
+        <button class="tf" data-tf="1M" aria-pressed="false">1M</button>
+        <button class="tf" data-tf="1y" aria-pressed="false">1Y</button>
+        <span class="tf-note">Signals run on <b>5m</b></span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chart" role="img" aria-label="Index price chart with EMA and VWAP overlays. Drag to pan, scroll or pinch to zoom, double-click to reset."></canvas>
+        <button class="chart-reset" id="chartReset" type="button" title="Reset pan and zoom (or double-click the chart)">RESET VIEW</button>
+        <div class="chart-tip" id="chartTip"></div>
+      </div>
+      <div class="chart-foot" id="chartFoot"></div>
+    </section>
+  </section>
+
   <section class="control-grid">
     <section class="panel signal-panel">
       <div class="panel-head">
@@ -662,48 +704,6 @@
         <span id="riskMode" class="chip">PAPER</span>
       </div>
       <div id="riskBody" class="risk-body"></div>
-    </section>
-  </section>
-
-  <section class="workspace">
-    <section class="panel chart-panel">
-      <div class="panel-head chart-head">
-        <div class="tabs" id="tabs">
-          <button class="tab on" data-sym="NIFTY">NIFTY 50</button>
-          <button class="tab" data-sym="BANKNIFTY">BANK NIFTY</button>
-          <button class="tab" data-sym="SENSEX">SENSEX</button>
-        </div>
-        <div class="legend">
-          <span><i class="sw ema20"></i>EMA 20</span>
-          <span><i class="sw ema50"></i>EMA 50</span>
-          <span id="vwapLegend"><i class="sw vwap"></i>VWAP</span>
-        </div>
-        <div class="chart-quote"><b id="chartSpot">--</b><span id="chartChg" class="muted">--</span></div>
-        <span class="live-tag" id="liveTag" title="Last index print feeding the forming candle; broker and Yahoo prices can be delayed">
-          <i></i><b id="liveLabel">FEED IDLE</b><span id="liveTime">--</span>
-        </span>
-      </div>
-      <div class="tf-bar" role="group" aria-label="Chart timeframe">
-        <button class="tf" data-tf="1m" aria-pressed="false">1m</button>
-        <button class="tf" data-tf="2m" aria-pressed="false">2m</button>
-        <button class="tf" data-tf="3m" aria-pressed="false">3m</button>
-        <button class="tf on" data-tf="5m" aria-pressed="true">5m</button>
-        <button class="tf" data-tf="10m" aria-pressed="false">10m</button>
-        <button class="tf" data-tf="15m" aria-pressed="false">15m</button>
-        <button class="tf" data-tf="30m" aria-pressed="false">30m</button>
-        <button class="tf" data-tf="1h" aria-pressed="false">1H</button>
-        <button class="tf" data-tf="1d" aria-pressed="false">1D</button>
-        <button class="tf" data-tf="1w" aria-pressed="false">1W</button>
-        <button class="tf" data-tf="1M" aria-pressed="false">1M</button>
-        <button class="tf" data-tf="1y" aria-pressed="false">1Y</button>
-        <span class="tf-note">Signals run on <b>5m</b></span>
-      </div>
-      <div class="chart-wrap">
-        <canvas id="chart" role="img" aria-label="Index price chart with EMA and VWAP overlays. Drag to pan, scroll or pinch to zoom, double-click to reset."></canvas>
-        <button class="chart-reset" id="chartReset" type="button" title="Reset pan and zoom (or double-click the chart)">RESET VIEW</button>
-        <div class="chart-tip" id="chartTip"></div>
-      </div>
-      <div class="chart-foot" id="chartFoot"></div>
     </section>
   </section>
 
