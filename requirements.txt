@@ -1,0 +1,12 @@
+fastapi>=0.110
+uvicorn>=0.29
+pandas>=2.0
+numpy>=1.24
+yfinance>=1.7
+requests>=2.31
+
+# Browser-impersonating client for BSE's Akamai-fronted derivatives API:
+curl_cffi>=0.7
+
+# Optional, only needed for real Kite Connect order placement:
+# kiteconnect>=5.0
