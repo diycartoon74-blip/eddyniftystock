@@ -258,8 +258,8 @@
   .panel{min-width:0}
   .chart-panel{display:flex;flex-direction:column;min-height:474px;height:100%}
   .chart-head{flex-wrap:wrap;gap:12px}
-  .tabs{display:flex;gap:4px;background:var(--surface-2);border:1px solid var(--line);padding:3px;border-radius:8px}
-  .tab{background:none;border:0;color:var(--muted);font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;padding:6px 10px;border-radius:5px;cursor:pointer}
+  .tabs{display:flex;flex-wrap:nowrap;gap:4px;background:var(--surface-2);border:1px solid var(--line);padding:3px;border-radius:8px}
+  .tab{background:none;border:0;color:var(--muted);font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;padding:6px 10px;border-radius:5px;cursor:pointer;white-space:nowrap;flex:0 0 auto}
   .tab.on{background:var(--surface-active);color:var(--text);box-shadow:inset 0 0 0 1px rgba(84,200,255,.22)}
   .legend{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:auto}
   .legend span{display:inline-flex;align-items:center;gap:5px}
@@ -514,8 +514,11 @@
   ::-webkit-scrollbar-thumb:hover{background:var(--btn-line-hover);background-clip:padding-box}
 
   @media (max-width:1400px){
-    .index-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-    .index-grid .index-card:nth-child(3){grid-column:span 2}
+    /* Keep NIFTY, BANKNIFTY and SENSEX side by side; the two micro panels
+       get their own full-width row underneath. */
+    .index-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+    .index-grid .index-card{grid-column:span 2}
+    .index-grid .micro{grid-column:span 3}
   }
   @media (max-width:1240px){
     .workspace{grid-template-columns:minmax(0,1fr)}
@@ -531,15 +534,20 @@
     .legend{display:none}
     .tf-note{display:none}
     .col{grid-template-columns:minmax(0,1fr)}
+    .index-card{padding:13px 12px}
+    .card-foot{font-size:8px;gap:4px}
+    .index-card .bar{width:52px}
     .price{font-size:22px}
     .chart-wrap{height:300px;flex:0 0 300px}
     .chart-panel{min-height:420px}
     .levels{grid-template-columns:1fr 1fr}
     .footer{flex-direction:column}
   }
-  @media (max-width:520px){
+  @media (max-width:640px){
     .index-grid{grid-template-columns:minmax(0,1fr)}
-    .index-grid .index-card:nth-child(3){grid-column:auto}
+    .index-grid .index-card,.index-grid .micro{grid-column:auto}
+  }
+  @media (max-width:520px){
     .price{font-size:25px}
     .brand h1{font-size:15px}
     .topmeta{gap:7px}
