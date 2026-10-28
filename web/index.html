@@ -196,7 +196,9 @@
   .notice .btn{margin-left:auto}
 
   /* layout */
-  .index-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) repeat(2,minmax(0,.82fr));gap:14px}
+  .index-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+  .insight-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
+  .control-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:14px}
   .panel{
     background:var(--panel-grad);
     border:1px solid var(--line);border-radius:14px;
@@ -244,7 +246,7 @@
   .card-foot b{color:var(--ink-2);font-weight:500}
   .warming{padding:26px 0;text-align:center;color:var(--muted);font-family:var(--mono);font-size:10.5px}
 
-  .micro{padding:15px 17px;display:flex;flex-direction:column;justify-content:space-between;gap:8px}
+  .micro{padding:15px 17px;display:flex;flex-direction:column;justify-content:flex-start;gap:8px}
   .micro-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
   .micro-head label{font-size:9px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase}
   .micro .big{font-family:var(--mono);font-size:25px;font-weight:600;line-height:1.1;margin-top:2px}
@@ -253,8 +255,7 @@
   .micro-rows > div{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9.5px;color:var(--muted)}
   .micro-rows b{color:var(--ink-2);font-weight:500}
 
-  .workspace{display:grid;grid-template-columns:minmax(0,1fr) 352px;gap:14px;margin-top:14px}
-  .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+  .workspace{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin-top:14px}
   .panel{min-width:0}
   .chart-panel{display:flex;flex-direction:column;min-height:474px;height:100%}
   .chart-head{flex-wrap:wrap;gap:12px}
@@ -513,18 +514,24 @@
   ::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
   ::-webkit-scrollbar-thumb:hover{background:var(--btn-line-hover);background-clip:padding-box}
 
-  @media (max-width:1400px){
-    /* Keep NIFTY, BANKNIFTY and SENSEX side by side; the two micro panels
-       get their own full-width row underneath. */
-    .index-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
-    .index-grid .index-card{grid-column:span 2}
-    .index-grid .micro{grid-column:span 3}
-  }
   @media (max-width:1240px){
-    .workspace{grid-template-columns:minmax(0,1fr)}
-    .col{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
     .chart-panel{min-height:460px}
     .lower-grid{grid-template-columns:minmax(0,1fr)}
+  }
+  @media (max-width:1000px){
+    .wallet-body{padding:0 12px 12px;gap:9px}
+    .wallet-top{flex-direction:column;align-items:stretch;gap:8px}
+    .wallet-balance{font-size:22px}
+    .wallet-side{min-width:0}
+    .wallet-form{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+    .wallet-form input{grid-column:1/-1}
+    .wallet-form .btn{width:100%;padding:7px 6px;font-size:8.5px}
+    .wallet-row{grid-template-columns:38px minmax(0,1fr) auto;gap:6px;font-size:8.5px}
+    .wallet-ledger{max-height:120px}
+    .risk-body{padding:0 12px 12px;gap:9px}
+    .risk-grid{grid-template-columns:1fr;gap:5px}
+    .risk-grid > div{padding-bottom:5px;font-size:9px}
+    .risk-grid b{font-size:9px}
   }
   @media (max-width:820px){
     .shell{padding:14px 14px 28px}
@@ -533,19 +540,24 @@
     .clock{display:none}
     .legend{display:none}
     .tf-note{display:none}
-    .col{grid-template-columns:minmax(0,1fr)}
     .index-card{padding:13px 12px}
     .card-foot{font-size:8px;gap:4px}
     .index-card .bar{width:52px}
+    .signal-body{padding:0 12px 12px;gap:9px}
+    .ring{width:48px;height:48px;font-size:12px}
+    .levels{gap:5px}
+    .levels > div{padding:7px 7px}
     .price{font-size:22px}
     .chart-wrap{height:300px;flex:0 0 300px}
     .chart-panel{min-height:420px}
     .levels{grid-template-columns:1fr 1fr}
     .footer{flex-direction:column}
   }
+  @media (max-width:660px){
+    .control-grid{grid-template-columns:minmax(0,1fr)}
+  }
   @media (max-width:640px){
-    .index-grid{grid-template-columns:minmax(0,1fr)}
-    .index-grid .index-card,.index-grid .micro{grid-column:auto}
+    .index-grid,.insight-grid{grid-template-columns:minmax(0,1fr)}
   }
   @media (max-width:520px){
     .price{font-size:25px}
@@ -598,8 +610,59 @@
     <article class="panel index-card" data-card="NIFTY"></article>
     <article class="panel index-card" data-card="BANKNIFTY"></article>
     <article class="panel index-card" data-card="SENSEX"></article>
+  </section>
+
+  <section class="insight-grid">
     <article class="panel micro" id="pcrCard"></article>
     <article class="panel micro" id="pnlCard"></article>
+  </section>
+
+  <section class="control-grid">
+    <section class="panel signal-panel">
+      <div class="panel-head">
+        <h2>Trade signal</h2>
+        <span id="sigStatus" class="chip">SCANNING</span>
+      </div>
+      <div id="signalBody" class="signal-body">
+        <div class="warming">Connecting to the feed...</div>
+      </div>
+    </section>
+
+    <section class="panel wallet-panel">
+      <div class="panel-head">
+        <h2>Wallet</h2>
+        <span id="walletMode" class="chip">PAPER</span>
+      </div>
+      <div class="wallet-body">
+        <div class="wallet-top">
+          <div>
+            <label>Available cash</label>
+            <div class="wallet-balance" id="walletCash">&#8377;0</div>
+          </div>
+          <div class="wallet-side">
+            <div><span>Equity</span><b id="walletEquity">--</b></div>
+            <div><span>Invested</span><b id="walletInvested">--</b></div>
+            <div><span>Unrealised</span><b id="walletUnreal">--</b></div>
+          </div>
+        </div>
+        <div class="wallet-form">
+          <input id="walletAmount" inputmode="decimal" autocomplete="off" placeholder="Amount in &#8377;" aria-label="Amount to add or withdraw">
+          <button class="btn add" id="walletAdd" type="button">ADD MONEY</button>
+          <button class="btn ghost" id="walletWithdraw" type="button">WITHDRAW</button>
+        </div>
+        <div class="wallet-msg" id="walletMsg" role="status" aria-live="polite"></div>
+        <div class="wallet-ledger" id="walletLedger"></div>
+        <div class="wallet-foot" id="walletFoot"></div>
+      </div>
+    </section>
+
+    <section class="panel risk-panel">
+      <div class="panel-head">
+        <h2>Risk &amp; execution</h2>
+        <span id="riskMode" class="chip">PAPER</span>
+      </div>
+      <div id="riskBody" class="risk-body"></div>
+    </section>
   </section>
 
   <section class="workspace">
@@ -642,54 +705,6 @@
       </div>
       <div class="chart-foot" id="chartFoot"></div>
     </section>
-
-    <aside class="col">
-      <section class="panel signal-panel">
-        <div class="panel-head">
-          <h2>Trade signal</h2>
-          <span id="sigStatus" class="chip">SCANNING</span>
-        </div>
-        <div id="signalBody" class="signal-body">
-          <div class="warming">Connecting to the feed...</div>
-        </div>
-      </section>
-
-      <section class="panel wallet-panel">
-        <div class="panel-head">
-          <h2>Wallet</h2>
-          <span id="walletMode" class="chip">PAPER</span>
-        </div>
-        <div class="wallet-body">
-          <div class="wallet-top">
-            <div>
-              <label>Available cash</label>
-              <div class="wallet-balance" id="walletCash">&#8377;0</div>
-            </div>
-            <div class="wallet-side">
-              <div><span>Equity</span><b id="walletEquity">--</b></div>
-              <div><span>Invested</span><b id="walletInvested">--</b></div>
-              <div><span>Unrealised</span><b id="walletUnreal">--</b></div>
-            </div>
-          </div>
-          <div class="wallet-form">
-            <input id="walletAmount" inputmode="decimal" autocomplete="off" placeholder="Amount in &#8377;" aria-label="Amount to add or withdraw">
-            <button class="btn add" id="walletAdd" type="button">ADD MONEY</button>
-            <button class="btn ghost" id="walletWithdraw" type="button">WITHDRAW</button>
-          </div>
-          <div class="wallet-msg" id="walletMsg" role="status" aria-live="polite"></div>
-          <div class="wallet-ledger" id="walletLedger"></div>
-          <div class="wallet-foot" id="walletFoot"></div>
-        </div>
-      </section>
-
-      <section class="panel risk-panel">
-        <div class="panel-head">
-          <h2>Risk &amp; execution</h2>
-          <span id="riskMode" class="chip">PAPER</span>
-        </div>
-        <div id="riskBody" class="risk-body"></div>
-      </section>
-    </aside>
   </section>
 
   <section class="lower-grid">
