@@ -197,8 +197,8 @@
 
   /* layout */
   .index-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-  .insight-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
-  .control-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:14px}
+  .insight-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:14px}
+  .control-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
   .panel{
     background:var(--panel-grad);
     border:1px solid var(--line);border-radius:14px;
@@ -529,7 +529,7 @@
     .wallet-row{grid-template-columns:38px minmax(0,1fr) auto;gap:6px;font-size:8.5px}
     .wallet-ledger{max-height:120px}
     .risk-body{padding:0 12px 12px;gap:9px}
-    .risk-grid{grid-template-columns:1fr;gap:5px}
+    .risk-grid{gap:5px 8px}
     .risk-grid > div{padding-bottom:5px;font-size:9px}
     .risk-grid b{font-size:9px}
   }
@@ -615,6 +615,34 @@
   <section class="insight-grid">
     <article class="panel micro" id="pcrCard"></article>
     <article class="panel micro" id="pnlCard"></article>
+    <section class="panel wallet-panel">
+      <div class="panel-head">
+        <h2>Wallet</h2>
+        <span id="walletMode" class="chip">PAPER</span>
+      </div>
+      <div class="wallet-body">
+        <div class="wallet-top">
+          <div>
+            <label>Available cash</label>
+            <div class="wallet-balance" id="walletCash">&#8377;0</div>
+          </div>
+          <div class="wallet-side">
+            <div><span>Equity</span><b id="walletEquity">--</b></div>
+            <div><span>Invested</span><b id="walletInvested">--</b></div>
+            <div><span>Unrealised</span><b id="walletUnreal">--</b></div>
+          </div>
+        </div>
+        <div class="wallet-form">
+          <input id="walletAmount" inputmode="decimal" autocomplete="off" placeholder="Amount in &#8377;" aria-label="Amount to add or withdraw">
+          <button class="btn add" id="walletAdd" type="button">ADD MONEY</button>
+          <button class="btn ghost" id="walletWithdraw" type="button">WITHDRAW</button>
+        </div>
+        <div class="wallet-msg" id="walletMsg" role="status" aria-live="polite"></div>
+        <div class="wallet-ledger" id="walletLedger"></div>
+        <div class="wallet-foot" id="walletFoot"></div>
+      </div>
+    </section>
+
   </section>
 
   <section class="workspace">
@@ -667,34 +695,6 @@
       </div>
       <div id="signalBody" class="signal-body">
         <div class="warming">Connecting to the feed...</div>
-      </div>
-    </section>
-
-    <section class="panel wallet-panel">
-      <div class="panel-head">
-        <h2>Wallet</h2>
-        <span id="walletMode" class="chip">PAPER</span>
-      </div>
-      <div class="wallet-body">
-        <div class="wallet-top">
-          <div>
-            <label>Available cash</label>
-            <div class="wallet-balance" id="walletCash">&#8377;0</div>
-          </div>
-          <div class="wallet-side">
-            <div><span>Equity</span><b id="walletEquity">--</b></div>
-            <div><span>Invested</span><b id="walletInvested">--</b></div>
-            <div><span>Unrealised</span><b id="walletUnreal">--</b></div>
-          </div>
-        </div>
-        <div class="wallet-form">
-          <input id="walletAmount" inputmode="decimal" autocomplete="off" placeholder="Amount in &#8377;" aria-label="Amount to add or withdraw">
-          <button class="btn add" id="walletAdd" type="button">ADD MONEY</button>
-          <button class="btn ghost" id="walletWithdraw" type="button">WITHDRAW</button>
-        </div>
-        <div class="wallet-msg" id="walletMsg" role="status" aria-live="polite"></div>
-        <div class="wallet-ledger" id="walletLedger"></div>
-        <div class="wallet-foot" id="walletFoot"></div>
       </div>
     </section>
 
