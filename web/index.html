@@ -1478,9 +1478,11 @@
       : `<div class="wallet-empty">No wallet activity yet.</div>`;
     ledger.scrollTop = scroll;
 
-    $("#walletFoot").textContent = S.mode === "live"
-      ? "Local allocation ledger for live mode. Your broker account holds the actual funds; this balance does not move real money."
-      : "Simulated cash: deposits and withdrawals are paper entries only.";
+    $("#walletFoot").textContent = w.shared
+      ? "Shared wallet: this balance is synced between your local app and Render."
+      : S.mode === "live"
+        ? "Local allocation ledger for live mode. Your broker account holds the actual funds; this balance does not move real money."
+        : "Simulated cash: deposits and withdrawals are paper entries only.";
   }
 
   function tickClock() {

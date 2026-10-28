@@ -18,3 +18,7 @@ services:
         value: "1"
       - key: DEMO_MODE
         value: "0"
+      # Set this in Render to the same external Postgres URL used locally.
+      # Leave it unset to keep the wallet in the ephemeral SQLite file.
+      - key: WALLET_DATABASE_URL
+        sync: false

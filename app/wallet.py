@@ -1,9 +1,12 @@
 """Cash wallet for the paper and live ledgers.
 
-Both modes keep their own ledger in SQLite. Cash is debited when an option is
-bought and credited when it is sold; deposits and withdrawals are explicit
-ledger entries. In live mode the wallet is a local allocation record - the
-broker still holds the actual funds.
+Both LIVE and DEMO use one ledger, so a deposit made in either mode is visible
+in both. Cash is debited when an option is bought and credited when it is
+sold; deposits and withdrawals are explicit ledger entries. In live mode the
+wallet is a local allocation record - the broker still holds the actual funds.
+
+Storage is SQLite by default. Set ``WALLET_DATABASE_URL`` to a hosted Postgres
+database to share the same ledger between the local app and Render.
 """
 
 from __future__ import annotations
@@ -13,6 +16,7 @@ import math
 from .config import Settings
 from .datafeed import now_ist
 from .storage import Store
+from .walletstore import PostgresWalletStore
 
 KINDS = {"opening", "deposit", "withdraw", "entry", "exit", "adjust"}
 
@@ -23,21 +27,33 @@ class WalletError(ValueError):
 
 class Wallet:
     MAX_TXN = 100_000_000.0  # Rs 10 crore per deposit/withdrawal
+    LEDGER_MODE = "live"  # one shared ledger for LIVE and DEMO
 
-    def __init__(self, store: Store, settings: Settings) -> None:
+    def __init__(
+        self, store: Store | PostgresWalletStore, settings: Settings
+    ) -> None:
         self.store = store
         self.settings = settings
+
+    @property
+    def backend(self) -> str:
+        return getattr(self.store, "backend", "sqlite")
+
+    def _key(self, mode: str) -> str:
+        """Every display mode reads and writes the same ledger."""
+        return self.LEDGER_MODE
 
     # ------------------------------------------------------------------ setup
     def ensure(self, mode: str) -> bool:
         """Seed an opening balance once. Returns True when seeded now."""
-        if self.store.wallet_has_history(mode):
+        key = self._key(mode)
+        if self.store.wallet_has_history(key):
             return False
         self.store.wallet_append(
-            mode,
+            key,
             "opening",
             float(self.settings.capital),
-            "Opening balance" + (" (simulated)" if mode == "demo" else " (local allocation)"),
+            "Opening balance (shared wallet)",
             "",
             now_ist().isoformat(timespec="seconds"),
         )
@@ -45,15 +61,15 @@ class Wallet:
 
     # ------------------------------------------------------------------ reads
     def balance(self, mode: str) -> float:
-        return round(self.store.wallet_balance(mode), 2)
+        return round(self.store.wallet_balance(self._key(mode)), 2)
 
     def history(self, mode: str, limit: int = 6) -> list[dict]:
-        return self.store.wallet_entries(mode, limit)
+        return self.store.wallet_entries(self._key(mode), limit)
 
     # ----------------------------------------------------------------- writes
     def _post(self, mode: str, kind: str, amount: float, note: str, ref: str = "") -> dict:
         entry = self.store.wallet_append(
-            mode, kind, amount, note, ref, now_ist().isoformat(timespec="seconds")
+            self._key(mode), kind, amount, note, ref, now_ist().isoformat(timespec="seconds")
         )
         assert kind in KINDS
         return entry

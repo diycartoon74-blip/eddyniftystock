@@ -115,6 +115,7 @@ async def health() -> dict:
         "last_refresh": snapshot["last_refresh"],
         "last_error": snapshot["last_error"],
         "symbols_ready": len(snapshot["symbols"]),
+        "wallet_backend": snapshot["wallet"]["backend"],
         "auto_trade": snapshot["settings"]["auto_trade"],
         "halted": snapshot["risk"]["halted"],
     }

@@ -11,8 +11,11 @@ from .config import DB_PATH
 
 
 class Store:
+    backend = "sqlite"
+
     def __init__(self, path: Path = DB_PATH) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
+        self.path = str(path.resolve())
         self._lock = threading.Lock()
         self._conn = sqlite3.connect(str(path), check_same_thread=False, timeout=10)
         self._conn.execute("PRAGMA journal_mode=WAL")
@@ -179,7 +182,7 @@ class Store:
         with self._lock:
             rows = self._conn.execute(
                 """
-                SELECT ts, kind, amount, balance_after, note, ref
+                SELECT id, ts, kind, amount, balance_after, note, ref
                 FROM wallet_ledger WHERE mode = ?
                 ORDER BY id DESC LIMIT ?
                 """,
@@ -187,15 +190,20 @@ class Store:
             ).fetchall()
         return [
             {
-                "ts": r[0],
-                "kind": r[1],
-                "amount": round(float(r[2]), 2),
-                "balance_after": round(float(r[3]), 2),
-                "note": r[4],
-                "ref": r[5],
+                "id": r[0],
+                "ts": r[1],
+                "kind": r[2],
+                "amount": round(float(r[3]), 2),
+                "balance_after": round(float(r[4]), 2),
+                "note": r[5],
+                "ref": r[6],
             }
             for r in rows
         ]
+
+    def wallet_all_entries(self, mode: str) -> list[dict]:
+        """Every ledger row, newest first (used for the Postgres import)."""
+        return self.wallet_entries(mode, limit=-1)
 
     def close(self) -> None:
         with self._lock:

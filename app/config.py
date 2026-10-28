@@ -9,6 +9,7 @@ Environment variables (optionally loaded from .env in the project root):
   BROKER=kite                broker adapter to use (paper | kite)
   KITE_API_KEY, KITE_ACCESS_TOKEN
   CAPITAL, RISK_PER_TRADE_PCT
+  WALLET_DATABASE_URL        optional Postgres URL shared by local + Render
 """
 
 from __future__ import annotations
@@ -47,6 +48,12 @@ def _load_dotenv() -> None:
 
 
 _load_dotenv()
+
+# One optional hosted ledger shared by the local app and Render. Without it the
+# wallet stays in the local SQLite file (and Render's free instance resets it).
+WALLET_DATABASE_URL = (
+    os.getenv("WALLET_DATABASE_URL") or os.getenv("DATABASE_URL") or ""
+).strip()
 
 
 def env_bool(name: str, default: bool = False) -> bool:

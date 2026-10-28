@@ -8,5 +8,9 @@ requests>=2.31
 # Browser-impersonating client for BSE's Akamai-fronted derivatives API:
 curl_cffi>=0.7
 
+# Optional shared wallet ledger (local + Render). Only needed when
+# WALLET_DATABASE_URL is set.
+psycopg[binary]>=3.2
+
 # Optional, only needed for real Kite Connect order placement:
 # kiteconnect>=5.0

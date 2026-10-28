@@ -1,7 +1,7 @@
 """Trading engine: refresh -> analyze -> signal -> risk checks -> execute.
 
 The engine is intentionally conservative:
-  * a per-mode cash wallet funds every entry and receives every exit
+  * one shared cash wallet funds every entry and receives every exit
   * whole-lot sizing so a single lot never breaches the per-trade risk budget
   * daily trade cap, max open positions, and a daily loss circuit breaker
   * no live execution on synthetic data
@@ -28,6 +28,7 @@ from .datafeed import MarketData, market_is_open, now_ist
 from .storage import Store
 from .strategy import analyze
 from .wallet import Wallet, WalletError
+from .walletstore import build_wallet_store
 
 
 def position_size(
@@ -62,7 +63,7 @@ class TradingEngine:
 
         self._lock = threading.RLock()
         self._refreshing = False
-        self.wallet = Wallet(self.store, settings)
+        self.wallet = Wallet(build_wallet_store(self.store), settings)
         self.day = now_ist().date().isoformat()
         self.analyses: dict[str, dict] = {}
         self.signals: list[dict] = []
@@ -78,9 +79,8 @@ class TradingEngine:
         self._notes_seen: dict[str, str] = {}
 
         self._load_today()
-        for mode in ("demo", "live"):
-            if self.wallet.ensure(mode):
-                self._backfill_wallet(mode)
+        if self.wallet.ensure("live"):
+            self._backfill_wallet(None)
         self.log(
             "warn" if self.broker.is_live else "info",
             f"Execution: {self.broker.label} - {self.broker_note}",
@@ -156,22 +156,22 @@ class TradingEngine:
         if pending:
             self.log("info", f"Restored {len(pending)} pending order(s) for today")
 
-    def _backfill_wallet(self, mode: str) -> None:
+    def _backfill_wallet(self, mode: str | None = None) -> None:
         """Reconcile today's pre-wallet trades the first time a ledger is created."""
         adjusted = 0
         for trade in self.trades:
-            if trade.get("data_mode", mode) != mode:
+            if mode is not None and trade.get("data_mode", mode) != mode:
                 continue
             pnl = round(float(trade.get("pnl") or 0.0), 2)
             if pnl:
-                self.wallet.adjust(mode, pnl, f"Historic P&L {trade.get('id', '')}", trade.get("id", ""))
+                self.wallet.adjust(mode or "live", pnl, f"Historic P&L {trade.get('id', '')}", trade.get("id", ""))
                 adjusted += 1
         for pos in self.positions.values():
-            if pos.get("data_mode", mode) != mode:
+            if mode is not None and pos.get("data_mode", mode) != mode:
                 continue
             cost = round(float(pos.get("entry") or 0.0) * float(pos.get("qty") or 0), 2)
             if cost:
-                self.wallet.adjust(mode, -cost, f"Existing position {pos.get('id', '')}", pos.get("id", ""))
+                self.wallet.adjust(mode or "live", -cost, f"Existing position {pos.get('id', '')}", pos.get("id", ""))
                 adjusted += 1
         if adjusted:
             self.log("info", "Wallet opening balance reconciled with today's restored trades")
@@ -193,6 +193,8 @@ class TradingEngine:
         return {
             "mode": mode,
             "currency": "INR",
+            "backend": self.wallet.backend,
+            "shared": self.wallet.backend == "postgres",
             "cash": round(cash, 2),
             "invested": round(invested, 2),
             "invested_value": round(value, 2),

@@ -339,12 +339,14 @@ def test_wallet_seed_deposit_withdraw_and_caps(tmp_path):
 
     assert wallet.ensure("demo") is True
     assert wallet.ensure("demo") is False  # seeded exactly once
+    assert wallet.ensure("live") is False  # LIVE and DEMO share one ledger
     assert wallet.balance("demo") == 500000.0
-    assert wallet.balance("live") == 0.0  # modes never share cash
+    assert wallet.balance("live") == 500000.0
 
     wallet.deposit("demo", 25000, "Top up")
     wallet.withdraw("demo", 5000)
     assert wallet.balance("demo") == 520000.0
+    assert wallet.balance("live") == 520000.0
 
     with pytest.raises(WalletError):
         wallet.withdraw("demo", 600000)
@@ -357,7 +359,7 @@ def test_wallet_seed_deposit_withdraw_and_caps(tmp_path):
 
     kinds = [row["kind"] for row in wallet.history("demo", 10)]
     assert kinds == ["withdraw", "deposit", "opening"]
-    assert wallet.balance("live") == 0.0
+    assert wallet.history("live", 10) == wallet.history("demo", 10)
 
 
 def test_engine_manual_execution_debits_and_exit_credits(tmp_path):
@@ -471,12 +473,12 @@ def test_manual_execution_live_mode_uses_live_wallet(tmp_path, monkeypatch):
     assert result["ok"] is True, result
     cost = next(iter(engine.positions.values()))["cost"]
     assert engine.wallet.balance("live") == pytest.approx(500000.0 - cost, abs=0.01)
-    assert engine.wallet.balance("demo") == 500000.0  # demo is untouched
+    assert engine.wallet.balance("demo") == pytest.approx(500000.0 - cost, abs=0.01)
 
     engine.deposit(25000, "Live top-up")
     assert engine.snapshot()["wallet"]["cash"] == pytest.approx(525000.0 - cost, abs=0.01)
     engine.set_mode("demo")
-    assert engine.snapshot()["wallet"]["cash"] == pytest.approx(500000.0, abs=0.01)
+    assert engine.snapshot()["wallet"]["cash"] == pytest.approx(525000.0 - cost, abs=0.01)
     store.close()
 
 
@@ -636,7 +638,7 @@ def test_live_mode_rejects_limit_and_stop_orders(tmp_path, monkeypatch):
     assert stop["ok"] is False and "MARKET orders only" in stop["reason"]
     market = engine.place_order("SIG-LIVE-ORD", "market")
     assert market["ok"] is True and market["status"] == "filled", market
-    assert engine.wallet.balance("demo") == 500000.0
+    assert engine.wallet.balance("demo") == engine.wallet.balance("live")
     store.close()
 
 
