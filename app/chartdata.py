@@ -44,7 +44,7 @@ TIMEFRAMES: dict[str, dict] = {
     "1y": {"label": "1y", "base": "1d", "rule": None, "bars": 252, "period": "10y"},
 }
 
-RAW_TTL = {"1m": 30.0, "5m": 60.0, "1d": 600.0}
+RAW_TTL = {"1m": 10.0, "5m": 10.0, "1d": 600.0}
 
 
 def _resample(df: pd.DataFrame, rule: str | None) -> pd.DataFrame:
@@ -115,7 +115,7 @@ class ChartService:
 
         with self._lock:
             demo = self.settings.demo
-            ttl = 180.0 if tf in HIGH_TF else 20.0
+            ttl = 180.0 if tf in HIGH_TF else 10.0
             key = (symbol, tf, demo)
             hit = self._cache.get(key)
             if hit and time.time() - hit[0] < ttl:

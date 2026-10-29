@@ -41,15 +41,15 @@ def _ts(dt: datetime) -> str:
     return dt.astimezone(IST).isoformat(timespec="minutes")
 
 
-def _bucket_start(now: datetime) -> datetime | None:
-    """Current forming 5-minute bar inside the NSE session, else None."""
+def _bucket_start(now: datetime, minutes: int = 5) -> datetime | None:
+    """Start of the current NSE bar for the given interval, else None."""
     if now.weekday() >= 5:
         return None
     start = datetime.combine(now.date(), MARKET_OPEN, tzinfo=IST)
     if now < start or now.time() > MARKET_CLOSE:
         return None
-    minutes = int((now - start).total_seconds() // 300) * 5
-    return start + timedelta(minutes=minutes)
+    elapsed = int((now - start).total_seconds() // (minutes * 60)) * minutes
+    return start + timedelta(minutes=elapsed)
 
 
 class GrowwFeed:
@@ -91,6 +91,7 @@ class GrowwFeed:
         )
         self._session.headers.update(self.HEADERS)
         self._cache: dict[tuple[str, str], tuple[float, list[Candle]]] = {}
+        self._live: dict[tuple[str, str], list[Candle]] = {}
         self._lock = threading.RLock()
 
     def _cached(self, symbol: str, base: str, loader) -> list[Candle]:
@@ -188,20 +189,81 @@ class GrowwFeed:
             raise RuntimeError("groww returned no five-minute candles")
         return candles
 
+    def _merge_live(self, symbol: str, base: str, history: list[Candle]) -> list[Candle]:
+        """Overlay bars built from live quotes on Groww's delayed chart feed."""
+        with self._lock:
+            live = list(self._live.get((symbol, base), []))
+        if not live:
+            return list(history)
+        merged = {candle.t: candle for candle in history}
+        for candle in live:
+            merged[candle.t] = candle
+        return sorted(merged.values(), key=lambda candle: candle.t)
+
+    def record(self, symbol: str, price: float, when: datetime | None = None) -> None:
+        """Fold a live quote into the forming one- and five-minute bars.
+
+        Groww's chart feed is delayed, sometimes by more than ten minutes. The
+        quote feed is live, so the app builds the current session's bars itself
+        and overlays them on the historical candles.
+        """
+        if symbol not in SYMBOLS or price <= 0:
+            return
+        when = when or now_ist()
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=IST)
+        for base, minutes in (("1m", 1), ("5m", 5)):
+            bucket = _bucket_start(when, minutes)
+            if bucket is None:
+                continue
+            self._update_live(symbol, base, bucket, float(price))
+
+    def _update_live(self, symbol: str, base: str, bucket: datetime, price: float) -> None:
+        stamp = _ts(bucket)
+        with self._lock:
+            bars = self._live.setdefault((symbol, base), [])
+            if bars and bars[-1].t[:10] != stamp[:10]:
+                bars.clear()
+            if not bars or bars[-1].t < stamp:
+                open_price = bars[-1].c if bars else price
+                bars.append(
+                    Candle(
+                        stamp,
+                        round(open_price, 2),
+                        round(max(open_price, price), 2),
+                        round(min(open_price, price), 2),
+                        round(price, 2),
+                        0.0,
+                    )
+                )
+            elif bars[-1].t == stamp:
+                last = bars[-1]
+                bars[-1] = Candle(
+                    last.t,
+                    last.o,
+                    round(max(last.h, price), 2),
+                    round(min(last.l, price), 2),
+                    round(price, 2),
+                    last.v,
+                )
+            if len(bars) > 500:
+                del bars[:-500]
+
     def get(self, symbol: str) -> tuple[list[Candle], str]:
         """Five-minute index candles for analysis and the live chart."""
-        candles = self._cached(
+        history = self._cached(
             symbol,
             "5m",
             lambda: self._load_5m(symbol),
         )
+        candles = self._merge_live(symbol, "5m", history)
         if len(candles) < 30:
             raise RuntimeError("not enough groww candles")
         return candles[-750:], "groww"
 
     def minute(self, symbol: str) -> list[Candle]:
         """Current-session one-minute candles for the 1m/2m/3m views."""
-        return self._cached(
+        history = self._cached(
             symbol,
             "1m",
             lambda: self._load(
@@ -210,6 +272,7 @@ class GrowwFeed:
                 {"intervalInMinutes": 1, "minimal": "false"},
             ),
         )
+        return self._merge_live(symbol, "1m", history)
 
     def daily(self, symbol: str) -> list[Candle]:
         """Daily index candles for the 1d/1w/1M/1y views."""
@@ -227,6 +290,7 @@ class GrowwFeed:
     def reset(self) -> None:
         with self._lock:
             self._cache.clear()
+            self._live.clear()
 
 
 class DemoFeed:
@@ -599,6 +663,11 @@ class MarketData:
             quote = self.quotes.get(symbol)
             if not quote:
                 continue
+            try:
+                quote_at = datetime.fromisoformat(quote["t"])
+            except (KeyError, TypeError, ValueError):
+                quote_at = now_ist()
+            self.groww.record(symbol, quote["price"], quote_at)
             prev = self._prev_close_cache.get(symbol, 0.0)
             change = quote["price"] - prev if prev else 0.0
             out[symbol] = {

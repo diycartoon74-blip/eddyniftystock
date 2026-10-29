@@ -240,6 +240,39 @@ def test_groww_five_minute_feed_falls_back_to_history(monkeypatch):
     assert candles == history
 
 
+def test_groww_live_quotes_update_forming_bars(monkeypatch):
+    """Delayed Groww candles are overlaid with bars built from live quotes."""
+    feed = GrowwFeed()
+    history5 = _candles(count=29)  # 09:15 .. 11:35
+    start = datetime(2026, 10, 29, 9, 15, tzinfo=IST)
+    history1 = [
+        Candle(_ts(start + timedelta(minutes=i)), 22800.0, 22800.0, 22800.0, 22800.0, 0.0)
+        for i in range(151)  # 09:15 .. 11:45
+    ]
+
+    def fake_load(symbol, chart_range, params, **kwargs):
+        if params.get("intervalInMinutes") == 1:
+            return list(history1)
+        if chart_range == "daily":
+            return list(history5[-5:])
+        return list(history5)
+
+    monkeypatch.setattr(feed, "_load", fake_load)
+    when = datetime(2026, 10, 29, 11, 46, 5, tzinfo=IST)
+    feed.record("NIFTY", 22850.0, when)
+    feed.record("NIFTY", 22855.0, when + timedelta(seconds=15))
+    feed.record("NIFTY", 22848.0, when + timedelta(seconds=35))
+
+    five, source = feed.get("NIFTY")
+    assert source == "groww"
+    assert five[-1].t == "2026-10-29T11:45+05:30"
+    assert (five[-1].o, five[-1].h, five[-1].l, five[-1].c) == (22850.0, 22855.0, 22848.0, 22848.0)
+
+    minute = feed.minute("NIFTY")
+    assert minute[-1].t == "2026-10-29T11:46+05:30"
+    assert (minute[-1].h, minute[-1].l, minute[-1].c) == (22855.0, 22848.0, 22848.0)
+
+
 def test_live_ticks_never_mix_with_simulated_candles():
     market = MarketData()
     # No Groww candle refresh has succeeded, so live quotes must stay off the
