@@ -11,7 +11,7 @@ import pytest
 from app.broker import BrokerError, PaperBroker
 from app.chartdata import ChartService, TIMEFRAMES
 from app.config import IST, Settings
-from app.datafeed import DemoFeed, MarketData, _ts, now_ist
+from app.datafeed import DemoFeed, GrowwFeed, MarketData, _ts, now_ist
 from app.engine import TradingEngine, position_size
 from app.indicators import compute_frame, rsi, supertrend
 from app.models import Candle
@@ -195,6 +195,49 @@ def test_market_ticks_include_change_and_bar(monkeypatch):
     assert tick["candle"]["t"].startswith("2026-10-28T10:30")
     assert math.isfinite(tick["change_pct"])
     assert tick["change"] == round(tick["price"] - state["prev_close"], 2)
+
+
+def test_groww_five_minute_feed_prefers_fresh_session(monkeypatch):
+    """The five-session feed lags intraday; current-session bars must win."""
+    feed = GrowwFeed()
+    history = _candles(count=60)
+    fresh = [
+        Candle(c.t, c.o, c.h, c.l, c.c + 1.0, c.v)
+        for c in history[-12:]
+    ]
+
+    def fake_load(symbol, chart_range, params, **kwargs):
+        if chart_range == "daily":
+            return list(fresh)
+        if chart_range == "weekly":
+            return list(history)
+        raise AssertionError(chart_range)
+
+    monkeypatch.setattr(feed, "_load", fake_load)
+    candles, source = feed.get("NIFTY")
+
+    assert source == "groww"
+    assert len(candles) == len(history)
+    assert candles[0].t == history[0].t
+    assert candles[-1].t == fresh[-1].t
+    assert candles[-1].c == fresh[-1].c
+    assert len({c.t for c in candles}) == len(candles)
+
+
+def test_groww_five_minute_feed_falls_back_to_history(monkeypatch):
+    feed = GrowwFeed()
+    history = _candles(count=60)
+
+    def fake_load(symbol, chart_range, params, **kwargs):
+        if chart_range == "daily":
+            raise RuntimeError("session feed unavailable")
+        return list(history)
+
+    monkeypatch.setattr(feed, "_load", fake_load)
+    candles, source = feed.get("BANKNIFTY")
+
+    assert source == "groww"
+    assert candles == history
 
 
 def test_live_ticks_never_mix_with_simulated_candles():

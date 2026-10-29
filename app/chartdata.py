@@ -4,7 +4,7 @@ The trading engine always works on 5-minute bars. This service serves the
 chart's timeframe selector by resampling a small set of cached base feeds:
 
   1m / 2m / 3m        <- Groww 1-minute candles (current session)
-  5m .. 1h            <- Groww 5-minute candles (five sessions)
+  5m .. 1h            <- Groww five-session + current-session 5-minute bars
   1d / 1w / 1M / 1y   <- Groww daily candles (one year)
 
 Resampling is done with pandas so 2m, 10m and 1h stay consistent with the

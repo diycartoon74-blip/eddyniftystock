@@ -59,6 +59,10 @@ class GrowwFeed:
     "weekly" chart gives five-minute bars for the last five sessions and the
     "1y" chart gives daily bars, which together cover every timeframe in the
     dashboard without relying on a separate quote provider.
+
+    Groww's five-session feed can lag the current session by 20+ minutes, while
+    its single-session ("daily") feed is current. Five-minute bars therefore
+    merge both feeds, with the current-session feed taking precedence.
     """
 
     BASE = (
@@ -149,16 +153,47 @@ class GrowwFeed:
             raise RuntimeError("groww returned no candles")
         return candles
 
+    def _load_5m(self, symbol: str) -> list[Candle]:
+        """Merge fresh current-session bars with older five-session history."""
+        daily: list[Candle] | None = None
+        weekly: list[Candle] | None = None
+        try:
+            daily = self._load(
+                symbol,
+                "daily",
+                {"intervalInMinutes": 5, "minimal": "false"},
+            )
+        except Exception:
+            pass
+        try:
+            weekly = self._load(
+                symbol,
+                "weekly",
+                {"intervalInMinutes": 5, "minimal": "false"},
+            )
+        except Exception:
+            pass
+        if not daily and not weekly:
+            raise RuntimeError("groww returned no five-minute candles")
+
+        merged: dict[str, Candle] = {}
+        for candle in weekly or []:
+            merged[candle.t] = candle
+        # Groww's five-session feed is delayed, so current-session bars from the
+        # daily feed replace any stale bars with the same timestamp.
+        for candle in daily or []:
+            merged[candle.t] = candle
+        candles = sorted(merged.values(), key=lambda candle: candle.t)
+        if not candles:
+            raise RuntimeError("groww returned no five-minute candles")
+        return candles
+
     def get(self, symbol: str) -> tuple[list[Candle], str]:
         """Five-minute index candles for analysis and the live chart."""
         candles = self._cached(
             symbol,
             "5m",
-            lambda: self._load(
-                symbol,
-                "weekly",
-                {"intervalInMinutes": 5, "minimal": "false"},
-            ),
+            lambda: self._load_5m(symbol),
         )
         if len(candles) < 30:
             raise RuntimeError("not enough groww candles")
