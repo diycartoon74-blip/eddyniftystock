@@ -660,7 +660,7 @@
           <span id="vwapLegend"><i class="sw vwap"></i>VWAP</span>
         </div>
         <div class="chart-quote"><b id="chartSpot">--</b><span id="chartChg" class="muted">--</span></div>
-        <span class="live-tag" id="liveTag" title="Last index print feeding the forming candle; broker and Yahoo prices can be delayed">
+        <span class="live-tag" id="liveTag" title="Last index print feeding the forming candle; broker and Groww prices can be delayed">
           <i></i><b id="liveLabel">FEED IDLE</b><span id="liveTime">--</span>
         </span>
       </div>
@@ -773,7 +773,7 @@
     </div>
     <div class="right">
       <b>NiftyPulse</b> · 5m index candles<br>
-      Data: Yahoo Finance (NSE + BSE) / public chain endpoints<br>
+      Data: Groww (NSE + BSE indices) / public chain endpoints<br>
       <span id="feedBadge">paper execution</span>
     </div>
   </footer>
@@ -969,8 +969,10 @@
   // Real quotes must never be painted onto simulated fallback candles: the
   // price levels are unrelated. Demo mode is the one place the simulated tape
   // is expected to move.
+  const LIVE_SOURCES = new Set(["groww", "nse", "bse"]);
+
   function liveAllowed(source) {
-    return !S || S.mode === "demo" || source === "yahoo";
+    return !S || S.mode === "demo" || LIVE_SOURCES.has(source);
   }
 
   // Fold the latest print into the timeframe's forming bar. Never mutates the
@@ -1050,14 +1052,14 @@
         const m = mergeLive(p.candles || [], p.series || {}, "5m", liveAllowed(p.source));
         return {
           tf: "5m", candles: m.candles, series: m.series, live: m.live, price: m.price,
-          indicators: p.indicators || {}, source: p.source || "yahoo", bars: m.candles.length,
+          indicators: p.indicators || {}, source: p.source || "groww", bars: m.candles.length,
         };
       }
       if (!a) return null;
       const m = mergeLive(a.candles || [], a.series || {}, "5m", liveAllowed(a.feed_source));
       return {
         tf: "5m", candles: m.candles, series: m.series, live: m.live, price: m.price,
-        indicators: a.indicators || {}, source: a.feed_source || "yahoo", bars: m.candles.length,
+        indicators: a.indicators || {}, source: a.feed_source || "groww", bars: m.candles.length,
       };
     }
     const hit = chartCache[chartCacheKey(chartTf)];
@@ -1065,11 +1067,11 @@
     if (hit.error) return { tf: chartTf, error: hit.error };
     const m = mergeLive(
       hit.payload.candles || [], hit.payload.series || {}, chartTf,
-      liveAllowed(hit.payload.source || "yahoo"),
+      liveAllowed(hit.payload.source || "groww"),
     );
     return {
       tf: chartTf, candles: m.candles, series: m.series, live: m.live, price: m.price,
-      indicators: hit.payload.indicators || {}, source: hit.payload.source || "yahoo",
+      indicators: hit.payload.indicators || {}, source: hit.payload.source || "groww",
       bars: m.candles.length,
     };
   }
@@ -1550,9 +1552,9 @@
       const synthetic = Object.entries(S.symbols || {}).filter(
         ([sym, a]) => sym !== "SENSEX" && a.chain_source === "synthetic"
       );
-      const simulated = Object.values(S.symbols || {}).filter((a) => a.feed_source !== "yahoo");
+      const simulated = Object.values(S.symbols || {}).filter((a) => a.feed_source === "simulated");
       if (simulated.length) {
-        msgs.push({ cls: "danger", html: "<b>Index feed degraded.</b> Yahoo data is unavailable, so the dashboard is using simulated candles. Auto entries are blocked." });
+        msgs.push({ cls: "danger", html: "<b>Index feed degraded.</b> Groww data is unavailable, so the dashboard is using simulated candles. Auto entries are blocked." });
       } else if (synthetic.length) {
         msgs.push({ cls: "warn", html: "<b>Synthetic option chain.</b> Some premiums are Black-Scholes estimates. Live orders in synthetic chains stay blocked." });
       } else if (!S.market.open) {

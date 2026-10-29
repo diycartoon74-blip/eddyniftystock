@@ -24,7 +24,7 @@ from .config import (
     SYMBOLS,
     Settings,
 )
-from .datafeed import MarketData, market_is_open, now_ist
+from .datafeed import MarketData, is_live_feed, market_is_open, now_ist
 from .storage import Store
 from .strategy import analyze
 from .wallet import Wallet, WalletError
@@ -470,7 +470,7 @@ class TradingEngine:
             return f"Trading halted: {self.halt_reason}"
         if self.settings.live_execution and draft.chain_source != "nse":
             return "Live execution is only wired for NSE option chains"
-        if not self.settings.demo and analysis["feed_source"] != "yahoo":
+        if not self.settings.demo and not is_live_feed(analysis["feed_source"]):
             return "Execution blocked - index feed is simulated"
         trades_used = len(self._trades_view()) + len(self._positions_view()) + len(self._pending_orders())
         if trades_used >= self.settings.max_trades_per_day:
@@ -692,7 +692,7 @@ class TradingEngine:
             return "No new entries after 15:05 IST"
         if self.settings.live_execution and sig.get("chain_source") != "nse":
             return "Live execution is only wired for NSE option chains"
-        if not self.settings.demo and sig.get("feed_source") != "yahoo":
+        if not self.settings.demo and not is_live_feed(sig.get("feed_source")):
             return "Execution blocked - index feed is simulated"
         trades_used = len(self._trades_view()) + len(self._positions_view()) + len(pending)
         if trades_used >= self.settings.max_trades_per_day:
@@ -1008,7 +1008,7 @@ class TradingEngine:
         return {
             "type": "tick",
             "mode": "demo" if demo else "live",
-            "source": "simulated" if demo else "yahoo",
+            "source": "simulated" if demo else "groww",
             "open": True if demo else market_is_open(),
             "server_time": now_ist().isoformat(timespec="seconds"),
             "prices": self.data.ticks(demo),

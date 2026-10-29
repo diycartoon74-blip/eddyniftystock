@@ -39,9 +39,9 @@ def atr(df: pd.DataFrame, period: int = 14) -> pd.Series:
 def session_vwap(df: pd.DataFrame, reset: bool = True) -> pd.Series:
     """VWAP that resets every trading day, or anchors to the window start.
 
-    Index feeds (Yahoo ^NSEI / ^NSEBANK) carry zero volume, so when no bar has
-    measurable volume we fall back to an equal-weighted typical price (TWAP)
-    instead of a flat first-bar line.
+    Index feeds carry zero volume, so when no bar has measurable volume we fall
+    back to an equal-weighted typical price (TWAP) instead of a flat first-bar
+    line.
     """
     typical = (df["high"] + df["low"] + df["close"]) / 3.0
     volume = df["volume"].astype(float).replace(0.0, np.nan)

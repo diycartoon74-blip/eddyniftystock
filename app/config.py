@@ -73,7 +73,8 @@ def env_float(name: str, default: float) -> float:
 @dataclass(frozen=True)
 class SymbolConfig:
     key: str
-    yahoo: str
+    feed_exchange: str
+    feed_symbol: str
     step: int
     lot_size: int
     demo_base: float
@@ -89,7 +90,8 @@ class SymbolConfig:
 SYMBOLS: dict[str, SymbolConfig] = {
     "NIFTY": SymbolConfig(
         key="NIFTY",
-        yahoo="^NSEI",
+        feed_exchange="NSE",
+        feed_symbol="NIFTY",
         step=50,
         lot_size=75,
         demo_base=26050.0,
@@ -100,7 +102,8 @@ SYMBOLS: dict[str, SymbolConfig] = {
     ),
     "BANKNIFTY": SymbolConfig(
         key="BANKNIFTY",
-        yahoo="^NSEBANK",
+        feed_exchange="NSE",
+        feed_symbol="BANKNIFTY",
         step=100,
         lot_size=35,
         demo_base=59150.0,
@@ -110,7 +113,8 @@ SYMBOLS: dict[str, SymbolConfig] = {
     ),
     "SENSEX": SymbolConfig(
         key="SENSEX",
-        yahoo="^BSESN",
+        feed_exchange="BSE",
+        feed_symbol="1",
         step=100,
         lot_size=20,
         demo_base=82150.0,

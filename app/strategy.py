@@ -36,7 +36,7 @@ def analyze(
     chain: OptionChain,
     prev_close: float,
     threshold: int,
-    feed_source: str = "yahoo",
+    feed_source: str = "groww",
     note: str = "",
 ) -> dict:
     cfg = SYMBOLS[symbol]

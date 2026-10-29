@@ -3,9 +3,9 @@
 The trading engine always works on 5-minute bars. This service serves the
 chart's timeframe selector by resampling a small set of cached base feeds:
 
-  1m / 2m / 3m        <- Yahoo 1-minute candles (5 days)
-  5m .. 1h            <- Yahoo 5-minute candles (1 month)
-  1d / 1w / 1M / 1y   <- Yahoo daily candles (10 years)
+  1m / 2m / 3m        <- Groww 1-minute candles (current session)
+  5m .. 1h            <- Groww 5-minute candles (five sessions)
+  1d / 1w / 1M / 1y   <- Groww daily candles (one year)
 
 Resampling is done with pandas so 2m, 10m and 1h stay consistent with the
 underlying bars. Demo mode builds the same ladder from the simulated feed.
@@ -20,7 +20,6 @@ import zlib
 from datetime import datetime, timedelta
 
 import pandas as pd
-import yfinance as yf
 
 from .config import IST, SYMBOLS, Settings
 from .datafeed import MarketData, _ts, now_ist
@@ -46,30 +45,6 @@ TIMEFRAMES: dict[str, dict] = {
 }
 
 RAW_TTL = {"1m": 30.0, "5m": 60.0, "1d": 600.0}
-
-
-def _normalize(df: pd.DataFrame) -> pd.DataFrame:
-    """Yahoo frame -> lower-case OHLCV with an IST index."""
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = df.columns.get_level_values(0)
-    df = df.rename(columns={c: str(c).lower() for c in df.columns})
-    keep = [c for c in ("open", "high", "low", "close", "volume") if c in df.columns]
-    if len(keep) < 4:
-        raise RuntimeError(f"unexpected yahoo columns: {list(df.columns)}")
-    df = df[keep].copy()
-    if "volume" not in df:
-        df["volume"] = 0.0
-    df = df.dropna(subset=["open", "high", "low", "close"])
-    idx = pd.DatetimeIndex(df.index)
-    if idx.tz is None:
-        idx = idx.tz_localize(IST)
-    else:
-        try:
-            idx = idx.tz_convert(IST)
-        except Exception:
-            idx = idx.tz_localize(IST)
-    df.index = idx
-    return df.sort_index()
 
 
 def _resample(df: pd.DataFrame, rule: str | None) -> pd.DataFrame:
@@ -158,7 +133,7 @@ class ChartService:
             try:
                 raw = self._live_raw(symbol, spec["base"], spec["period"])
                 candles = _candles_from_frame(_resample(raw, spec["rule"]))
-                source = "yahoo"
+                source = "groww"
             except Exception:
                 candles = self._demo_candles(symbol, tf, spec)
 
@@ -179,20 +154,15 @@ class ChartService:
         hit = self._raw.get(key)
         if hit and now - hit[0] < RAW_TTL[base]:
             return hit[1]
-        cfg = SYMBOLS[symbol]
-        df = yf.download(
-            cfg.yahoo,
-            period=period,
-            interval=base,
-            progress=False,
-            auto_adjust=False,
-            threads=False,
-        )
-        if df is None or df.empty:
-            raise RuntimeError("yahoo returned no candles")
-        df = _normalize(df)
-        if len(df) < 30:
-            raise RuntimeError("not enough yahoo candles")
+        if base == "1m":
+            candles = self.market.groww.minute(symbol)
+        elif base == "1d":
+            candles = self.market.groww.daily(symbol)
+        else:
+            candles, _ = self.market.groww.get(symbol)
+        if len(candles) < 10:
+            raise RuntimeError("not enough groww candles")
+        df = _frame(candles)
         self._raw[key] = (now, df)
         return df
 

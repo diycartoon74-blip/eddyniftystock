@@ -199,7 +199,7 @@ def test_market_ticks_include_change_and_bar(monkeypatch):
 
 def test_live_ticks_never_mix_with_simulated_candles():
     market = MarketData()
-    # No Yahoo candle refresh has succeeded, so live quotes must stay off the
+    # No Groww candle refresh has succeeded, so live quotes must stay off the
     # chart rather than overlaying unrelated price levels.
     assert market.ticks(False) == {}
 
@@ -466,7 +466,7 @@ def test_manual_execution_live_mode_uses_live_wallet(tmp_path, monkeypatch):
     assert engine.wallet.balance("live") == 500000.0
 
     sig = _pending_signal(sid="SIG-LIVE-WALLET")
-    sig.update(ts=fixed.isoformat(timespec="seconds"), data_mode="live", feed_source="yahoo", chain_source="nse")
+    sig.update(ts=fixed.isoformat(timespec="seconds"), data_mode="live", feed_source="groww", chain_source="nse")
     engine.signals.append(sig)
 
     result = engine.execute_manual("SIG-LIVE-WALLET")
@@ -629,7 +629,7 @@ def test_live_mode_rejects_limit_and_stop_orders(tmp_path, monkeypatch):
     store = Store(tmp_path / "live_orders.db")
     engine = TradingEngine(settings, store=store)
     sig = _pending_signal(sid="SIG-LIVE-ORD")
-    sig.update(ts=fixed.isoformat(timespec="seconds"), data_mode="live", feed_source="yahoo", chain_source="nse")
+    sig.update(ts=fixed.isoformat(timespec="seconds"), data_mode="live", feed_source="groww", chain_source="nse")
     engine.signals.append(sig)
 
     limit = engine.place_order("SIG-LIVE-ORD", "limit", 190.0)
